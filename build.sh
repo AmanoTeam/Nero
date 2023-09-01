@@ -127,6 +127,8 @@ cd "${mpc_directory}/build"
 make all --jobs
 make install
 
+declare -r triplet='arm-obreey-linux-gnueabi'
+
 declare -r sysroot_filename='/tmp/sysroot.tar.xz'
 declare -r sysroot_directory='/tmp/SDK_481-5.2/arm-obreey-linux-gnueabi/sysroot'
 
