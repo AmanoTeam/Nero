@@ -197,7 +197,7 @@ rm --force --recursive ./*
 	--with-mpfr="${toolchain_directory}" \
 	--with-bugurl='https://github.com/AmanoTeam/Nero/issues' \
 	--with-pkgversion="Nero v0.1-${revision}" \
-	--with-sysroot="${toolchain_directory}/${triple}" \
+	--with-sysroot="${toolchain_directory}/${triplet}" \
 	--with-native-system-header-dir='/include' \
 	--with-arch='armv7-a' \
 	--with-tune='cortex-a8' \
