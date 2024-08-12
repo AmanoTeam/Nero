@@ -13,19 +13,39 @@ jobs:
     - uses: actions/checkout@main
       with:
         submodules: true
+    - name: Check for cache
+      id: check-cache
+      uses: actions/cache@main
+      with:
+        key: gcc-14.2.0
+        lookup-only: true
+        path: |
+          /tmp/x86_64-linux-gnu.tar.xz
+          /tmp/x86_64-linux-gnu.tar.xz.sha256
     - name: Build Nero
+      if: ${{ steps.check-cache.outputs.cache-hit != 'true' }}
       run: |
         bash './build.sh' 'native'
     - name: Generate tarball
+      if: ${{ steps.check-cache.outputs.cache-hit != 'true' }}
       run: |
         declare tarball_filename='/tmp/x86_64-linux-gnu.tar.xz'
         tar --directory='/tmp' --create --file=- 'nero' | xz --threads='0' --compress -9 > "${tarball_filename}"
         sha256sum "${tarball_filename}" | sed 's|/tmp/||' > "${tarball_filename}.sha256"
     - name: Upload artifact
+      if: ${{ steps.check-cache.outputs.cache-hit != 'true' }}
       uses: actions/upload-artifact@main
       with:
         name: native-toolchain
         if-no-files-found: error
+        path: |
+          /tmp/x86_64-linux-gnu.tar.xz
+          /tmp/x86_64-linux-gnu.tar.xz.sha256
+    - name: Cache artifact
+      if: ${{ steps.check-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache@main
+      with:
+        key: gcc-14.2.0
         path: |
           /tmp/x86_64-linux-gnu.tar.xz
           /tmp/x86_64-linux-gnu.tar.xz.sha256
@@ -38,6 +58,7 @@ jobs:
     strategy:
       matrix:
         target: [
+          'ia64-unknown-linux-gnu',
           'alpha-unknown-linux-gnu',
           'x86_64-unknown-linux-gnu',
           'i386-unknown-linux-gnu',
@@ -51,19 +72,24 @@ jobs:
           's390-unknown-linux-gnu',
           's390x-unknown-linux-gnu',
           'sparc-unknown-linux-gnu',
-          'powerpc64le-unknown-linux-gnu'
+          'powerpc64le-unknown-linux-gnu',
+          'mips64el-unknown-linux-gnuabi64'
         ]
     steps:
     - uses: actions/checkout@main
       with:
         submodules: true
-    - name: Download artifact
-      uses: actions/download-artifact@main
+    - name: Restore from cache
+      uses: actions/cache@main
       with:
-        name: native-toolchain
+        key: gcc-14.2.0
+        fail-on-cache-miss: true
+        path: |
+          /tmp/x86_64-linux-gnu.tar.xz
+          /tmp/x86_64-linux-gnu.tar.xz.sha256
     - name: Setup toolchain
       run: |
-        tar --directory='/tmp' --extract --file='./x86_64-linux-gnu.tar.xz'
+        tar --directory='/tmp' --extract --file='/tmp/x86_64-linux-gnu.tar.xz'
         mv '/tmp/nero' '/tmp/nero-toolchain'
     - name: Build Nero with OBGGCC
       run: |
@@ -79,7 +105,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@main
       with:
-        name: cross-toolchain
+        name: ${{ matrix.target }}
         if-no-files-found: error
         path: |
           /tmp/${{ matrix.target }}.tar.xz
